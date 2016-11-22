@@ -5,9 +5,9 @@ myvenv
 db.sqlite3
 /static
 .DS_Store
-/monikaenv
-/bin
-/include
-/lib
-/share
-/myenv
+monikaenv
+bin
+include
+lib
+share
+myenv
