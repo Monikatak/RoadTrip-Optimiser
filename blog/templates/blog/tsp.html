@@ -9,9 +9,300 @@ and open the template in the editor.
         <title>TODO supply a title</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    </head>
-    <body>
-        <div id="outer" style='background-color:#99ffff; height: 460px;width:26%;float:left'>
+        <style>
+            .ui-autocomplete {
+            max-height: 100px;
+            overflow-y: auto;
+            /* prevent horizontal scrollbar */
+            overflow-x: hidden;
+          }
+        </style>
+        <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBUECmxgrfj9Fjnj7R4GNOtql-FqRIHGpk&region=US&libraries=places&callback=initAutocomplete"
+        async defer></script>
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js">
+            </script>
+    
+        <script>
+            var map;
+            var markers = [];
+            var locations = [];
+            var path;
+            var count = 0;
+            var stringJs;
+            var disableListener = false;
+            var durations = [];
+            var directionsService = new google.maps.DirectionsService;
+            var directionsDisplay = new google.maps.DirectionsRenderer();
+            geocoder = new google.maps.Geocoder();  
+            function initAutocomplete() {
+                map = new google.maps.Map(document.getElementById('map-canvas'), {
+                zoom: 8,
+                center: {lat: 39.99, lng: -105.26},
+              });
+              
+        
+              map.addListener('click',function(event){placeandpan(event.latLng,map)})
+              function placeandpan(latLng,map){
+                  document.getElementById("btAdd").disabled = true;
+                  if (locations.length >= 10) {
+                            alert('Max destinations added');
+                            
+                            return;
+                              }
+                  var marker = new google.maps.Marker({
+                      position: latLng,
+                      map:map
+                  });
+                  //map.panTo(latLng);
+                  markers.push(marker);
+                  locations.push(latLng);
+                  
+              }
+           }
+       
+           function setMapOnAll(map) {
+             for (var i = 0; i < markers.length; i++) {
+             markers[i].setMap(map);
+           }
+          }
+           function clearmap(){
+               setMapOnAll(null);
+                if (directionsDisplay !== null) {
+			directionsDisplay.setMap(null);
+			directionsDisplay = null;
+		    }
+               if(path !== undefined){
+                   path.setMap(null);
+               }
+               markers = [];
+               locations = [];
+               document.getElementById("btAdd").disabled = false;
+           }
+           function route(){
+                   path = new google.maps.Polyline({
+                   path: locations,
+                   geodesic:true,
+                   strokeColor: '#FF0000',
+                   strokeOpacity: 1.0,
+                   strokeWeight: 2
+               })
+               path.setMap(map);
+           }
+           
+
+    function getLocationsfromText(){
+        if(count > 1){
+            var addr = [];
+            for(i=0;i<count;i++){
+            addr.push(document.getElementById("tb" +i).value);
+        }
+          for(j=0;j<addr.length;j++){
+            geocoder.geocode({'address': addr[j]}, function(results, status) {
+          if (status === 'OK') {
+            console.log("inside if")
+            var marker = new google.maps.Marker({
+              map: map,
+              position: results[0].geometry.location
+            });
+            markers.push(marker);
+            locations.push(results[0].geometry.location);
+          } else {
+            alert('Geocode was not successful for the following reason: ' + status);
+          }
+        });
+        setMapOnAll(map);
+    }
+    }
+    else{
+            alert("Enter destinations");
+        }
+    }
+    
+    function getDurations(callback) {
+    
+    var service = new google.maps.DistanceMatrixService();
+    service.getDistanceMatrix({
+        origins: locations,
+        destinations: locations,
+        travelMode: google.maps.TravelMode[$('#travel-type').val()],
+        avoidHighways: parseInt($('#avoid-highways').val()) > 0 ? true : false,
+        avoidTolls: false
+    }, function(data) {
+        // Create duration data array
+        var distance;
+        for (NodeIdOrigin in data.rows) {
+            distance = data.rows[NodeIdOrigin].elements;
+            durations[NodeIdOrigin] = [];
+            for (NodeIdDest in distance) {
+                if (durations[NodeIdOrigin][NodeIdDest] === distance[NodeIdDest].duration === undefined) {
+                    alert('Error getting duration');
+                    return;
+                }
+                durations[NodeIdOrigin][NodeIdDest] = distance[NodeIdDest].duration.value;
+                //document.getElementById('stats').innerHTML +=' ' + durations[NodeIdOrigin][NodeIdDest];
+            }
+             //console.log(durations[NodeIdOrigin]);
+        }
+        if (callback !== undefined) {
+            callback();
+        }
+    });
+   
+    
+}
+
+     
+$(document).ready(function() {
+   
+        
+        var container = $(document.createElement('div')).css({
+            padding: '5px',float:'left', width: '50%',backgroundColor: 'lightblue',border: '1px dashed',
+            borderTopColor: '#999', borderBottomColor: '#999',
+            borderLeftColor: '#999', borderRightColor: '#999'
+        });
+
+        $('#btAdd').click(function() {
+          
+            if (count <= 9) {
+
+                
+
+                // ADD TEXTBOX.
+                
+                $(container).append('<input type=text class="input" placeholder="Search Box" id=tb' + count +' />');
+                 
+
+                $('#main').after(container);
+                $(function() {
+    $(".input").autocomplete({
+        source : function(request, response) {
+                $(".ui-helper-hidden-accessible").hide();
+                geocoder.geocode({
+                'address' : request.term
+            }, function(results, status) {
+                response($.map(results, function(item) {
+                    return {
+                        label : item.formatted_address,
+                        value : item.formatted_address,
+                        latitude : item.geometry.location.lat(),
+                        longitude : item.geometry.location.lng(),
+                        
+                    }
+                }));
+            })
+        },
+    });
+});
+             count = count + 1;   
+            }
+            
+            else {      
+                $(container).append('<label>Reached the limit</label>'); 
+                $('#btAdd').attr('class', 'bt-disable'); 
+                $('#btAdd').attr('disabled', 'disabled');
+            }
+            
+  
+        });
+
+       
+        $('#btRemove').click(function() {
+            if (count != 0) { $('#tb' + count).remove(); count = count - 1; }
+        
+            if (count == 0) { 
+                $(container)
+                    .empty() 
+                    .remove(); 
+
+                $('#btAdd')
+                    .removeAttr('disabled') 
+                    .attr('class', 'bt');
+            }
+        });
+
+       
+        $('#btRemoveAll').click(function() {
+            $(container)
+                .empty()
+                .remove(); 
+
+            
+            count = 0; 
+            
+            $('#btAdd')
+                .removeAttr('disabled') 
+                .attr('class', 'bt');
+        });
+        
+        $('#find-route').click(function(){
+            getDurations(function(){
+    var tempjs = [];
+    for(i=0;i<durations.length;i++){
+                     tempjs[i]={};
+                     tempjs[i]["city" + i]=durations[i];
+                 }
+    stringJs = JSON.stringify(tempjs);
+    console.log(JSON.stringify(tempjs));
+    document.getElementById('stats').innerHTML +=' ' + stringJs;
+    $.ajax({
+        url: '127.0.0.1:8000/trip/',
+        type: 'POST',
+        data: stringJs,
+        traditional: true,
+        dataType: 'html',
+        success: function(result){
+           var json = JSON.parse(result)
+           console.log(json[0]["path"][0])
+           console.log(json[1]["totaltime"])
+           console.log(typeof json[0]["path"][1])
+           var waypoints = [];
+           var dest = json[0]["path"]
+           console.log(dest.length)
+           len = dest.length
+           for(i=0;i<len;i++){
+              waypoints.push({
+                       location:locations[json[0]["path"][i]],
+                       stopover: true
+           });
+           }
+           
+         
+           directionsDisplay.setMap(map);
+           var request = {
+	    origin: locations[json[0]["path"][0]],
+	    destination: locations[json[0]["path"][len-1]],
+            waypoints: waypoints,
+	    travelMode: 'DRIVING'
+	  };
+	  directionsService.route(request, function(result, status) {
+	    if (status == 'OK') {
+              console.log("ok")
+	      directionsDisplay.setDirections(result);
+	    }
+            else{
+              console.log("error")
+          }
+	  });
+
+           alert(result);
+            },
+         failure: function(result){
+             alert("error");
+             console.log("not ok")
+         }
+    });
+    });
+        })
+        google.maps.event.addDomListener(window, 'load',initAutocomplete);
+    
+});
+
+</script>
+    
+</head>
+<body>
+    <div id="outer" style='background-color:#99ffff; height: 460px;width:26%;float:left'>
     <div id="main" style="width:100%;background-color: #ff3366 ">
         <input type="button" id="btAdd" value="Add address" class="bt" />
         <input type="button" id="btRemove" value="Remove addr" class="bt" />
@@ -57,20 +348,23 @@ and open the template in the editor.
                         </td>
                     </tr>
                     <tr>
-                        <td>Destinations Count: </td>
+                        <td>Total Cities: </td>
                         <td id="destinations-count">0</td>
                     </tr>
-                    <tr class="ga-info" style="display:none;">
-                        <td>Generations: </td><td id="generations-passed">0</td>
+                    <tr class="conf" style="display:none;">
+                        <td>Iterations: </td><td id="Iterations-passed">0</td>
                     </tr>
-                    <tr class="ga-info" style="display:none;">
+                    <tr class="conf" style="display:none;">
                         <td>Best Time: </td><td id="best-time">?</td>
                     </tr>
-                    <tr id="ga-buttons">
-                        <td colspan="2"><button id="find-route" onclick="getDurations();" style="width:100%;background-color: #ff9933">Calculate Best Route</button> <button id="clear-map" style="width:100%" onclick="clearmap();">Clear</button></td>
+                    <tr id="buttons">
+                        <td colspan="2"><button id="find-route" style="width:100%;background-color: #ff9933">Calculate Best Route</button> <button id="clear-map" style="width:100%" onclick="clearmap();">Clear</button></td>
                     </tr>
                 </table>
     </div>
-    </body>
+            
+    
+            
+</body>
 </html>
 
