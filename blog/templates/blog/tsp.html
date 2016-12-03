@@ -72,6 +72,8 @@ and open the template in the editor.
             var dist = [];
             var directionsService = new google.maps.DirectionsService;
             var directionsDisplay = new google.maps.DirectionsRenderer();
+            var labels = 'ABCDEFGHIJK';
+            var labelIndex = 0;
             geocoder = new google.maps.Geocoder();  
             function initAutocomplete() {
                 map = new google.maps.Map(document.getElementById('map-canvas'), {
@@ -79,7 +81,7 @@ and open the template in the editor.
                 center: {lat: 39.99, lng: -105.26},
               });
               
-        
+              
               map.addListener('click',function(event){placeandpan(event.latLng,map)})
               function placeandpan(latLng,map){
                   document.getElementById("btAdd").disabled = true;
@@ -90,6 +92,7 @@ and open the template in the editor.
                               }
                   var marker = new google.maps.Marker({
                       position: latLng,
+                      label: labels[labelIndex++ % labels.length],
                       map:map
                   });
                   //map.panTo(latLng);
@@ -132,6 +135,7 @@ and open the template in the editor.
             console.log("inside if")
             var marker = new google.maps.Marker({
               map: map,
+              label: labels[labelIndex++ % labels.length],
               position: results[0].geometry.location
             });
             markers.push(marker);
@@ -318,7 +322,12 @@ $(document).ready(function() {
               console.log("error")
           }
 	  });
-
+           
+          for(i=0;i<len;i++){
+           document.getElementById('footer').innerHTML +=' ' + labels[json[0]["path"][i]];
+           }
+           document.getElementById('footer').innerHTML +=' ' + distsum;
+           document.getElementById('footer').innerHTML +=' ' + json[1]["totaltime"];
            alert(result);
             },
          failure: function(result){
@@ -370,7 +379,7 @@ $(document).ready(function() {
     </div>
     </div>     
     <div id="content" style="margin: 0 0 0 50%;background-color:#e6f9ff;height:630px">
-        <div id="map-canvas" style="width:860px; margin:  15px 60px 0 0 ; border: 1px solid grey; height:600px; background-color: padding:20px ; #e6f9ff;float:right"></div>
+        <div id="map-canvas" style="width:860px; margin:  15px 60px 0 0 ; border: 1px solid grey; height:600px; background-color:#e6f9ff; #e6f9ff;float:right"></div>
         <!--div class="hr vpad"></div-->
     </div>
     <div id='footer' style='float:left;background-color:#494952;height:350px;width:100%'>
