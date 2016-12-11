@@ -18,40 +18,33 @@ and open the template in the editor.
             /* prevent horizontal scrollbar */
             overflow-x: hidden;
           }
-
           .bt {
              background-color: #e6a640;
-    	     color: white;
-    	     border: 2px solid #e6a640;
-	     padding: 8px 16px;
-    	     text-align: center;
-             text-decoration: none;
+    	    color: white;
+    	    border: 2px solid #e6a640;
+	    padding: 8px 16px;
+    	    text-align: center;
              display: inline-block;
              font-size: 15px;
-    	    margin: 4px 2px;
-    	   -webkit-transition-duration: 0.4s; /* Safari */
-    	   transition-duration: 0.4s;
-    	   cursor: pointer;
-	  }
-
+    	   margin: 4px 2px;
+    	  transition-duration: 0.4s;
+    	  cursor: pointer;
+	 }
       .bt:hover {
        background-color: white;
        color: #e6a640;
         }
-
       input[type=text] {
-      width: 100%;
+      width: 80%;
       padding: 3px 3px;
-      margin: 5px 0;
+      margin: 3px 0;
       box-sizing: border-box;
-      border: 3px solid #ccc;
-      -webkit-transition: 0.5s;
+      border: 3px solid grey;
       transition: 0.5s;
       outline: none;
       }
-
       input[type=text]:focus {
-      border: 2px solid grey;
+      border: 2px solid black;
       }
         </style>
         <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBUECmxgrfj9Fjnj7R4GNOtql-FqRIHGpk&region=US&libraries=places&callback=initAutocomplete"
@@ -61,6 +54,7 @@ and open the template in the editor.
             </script>
     
         <script>
+            // Initialise all the global variables
             var map;
             var markers = [];
             var locations = [];
@@ -74,7 +68,8 @@ and open the template in the editor.
             var directionsDisplay = new google.maps.DirectionsRenderer();
             var labels = 'ABCDEFGHIJK';
             var labelIndex = 0;
-            geocoder = new google.maps.Geocoder();  
+            geocoder = new google.maps.Geocoder(); 
+            //load map on the page 
             function initAutocomplete() {
                 labels = 'ABCDEFGHIJK';
                 map = new google.maps.Map(document.getElementById('map-canvas'), {
@@ -82,10 +77,10 @@ and open the template in the editor.
                 center: {lat: 39.99, lng: -105.26},
               });
               
-              
+              //add click event listener on the map
               map.addListener('click',function(event){placeandpan(event.latLng,map)})
               function placeandpan(latLng,map){
-                  document.getElementById("btAdd").disabled = true;
+                  document.getElementById("addAddr").disabled = true;
                   if (locations.length >= 10) {
                             alert('Max destinations added');
                             
@@ -96,35 +91,38 @@ and open the template in the editor.
                       label: labels[labelIndex++ % labels.length],
                       map:map
                   });
-                  //map.panTo(latLng);
+                 
                   markers.push(marker);
                   locations.push(latLng);
                   
               }
            }
-       
-           function setMapOnAll(map) {
+           
+           // Set Markers on the map
+           function displayMap(map) {
              for (var i = 0; i < markers.length; i++) {
              markers[i].setMap(map);
            }
           }
+          
+           // clear the map of all markers and directions
            function clearmap(){
-               setMapOnAll(null);
+               displayMap(null);
                 if (directionsDisplay !== null) {
 			directionsDisplay.setMap(null);
-			//directionsDisplay = null;
-		    }
-               //if(path !== undefined){
-                   //path.setMap(null);
-               //}
+			
+		   }
+              
                markers = [];
                locations = [];
                durations = [];
-               document.getElementById("btAdd").disabled = false;
-               //google.maps.event.addDomListener(window, 'load',initAutocomplete);
-               //window.location.reload(true);
+               labelIndex = 0;
+               document.getElementById("addAddr").disabled = false;
+               $('#results').empty();
+          
            }
 
+    // Fetch all the locations from the texbox and use jquery geocode api to convert it into lat/lng
     function getLocationsfromText(){
         if(count > 1){
             var addr = [];
@@ -146,7 +144,7 @@ and open the template in the editor.
             alert('Geocode was not successful for the following reason: ' + status);
           }
         });
-        setMapOnAll(map);
+        displayMap(map);
     }
     }
     else{
@@ -154,6 +152,7 @@ and open the template in the editor.
         }
     }
     
+    //from the lat/lng , create the durations matrix
     function getDurations(callback) {
     
     var service = new google.maps.DistanceMatrixService();
@@ -169,7 +168,7 @@ and open the template in the editor.
         for (NodeIdOrigin in data.rows) {
             distance = data.rows[NodeIdOrigin].elements;
             durations[NodeIdOrigin] = [];
-            dist[NodeIdOrigin] = [];     //newly added
+            dist[NodeIdOrigin] = [];     
             for (NodeIdDest in distance) {
                 if (durations[NodeIdOrigin][NodeIdDest] === distance[NodeIdDest].duration === undefined) {
                     alert('Error getting duration');
@@ -188,27 +187,23 @@ and open the template in the editor.
    
     
 }
-
      
 $(document).ready(function() {
    
         console.log("ready")
-        var container = $(document.createElement('div')).css({
-            margin:'0 0 0 60px',float:'left',width:'50%',backgroundColor:'#a3a3c2'
+        var newDiv = $(document.createElement('div')).css({
+            margin:'0 0 0 60px',float:'left',width:'50%',backgroundColor:'e6f9ff'
         });
-
-        $('#btAdd').click(function() {
+        $('#addAddr').click(function() {
           
             if (count <= 9) {
-
                 
-
                 // ADD TEXTBOX.
                 
-                $(container).append('<input type=text class="input" placeholder="Search Box" id=tb' + count +' />');
-                 
-
-                $('#main').after(container);
+                $(newDiv).append('<input type=text class="input" placeholder="Search Box" id=tb' + count +' />');
+                
+                // add geocode autocomplete to textbox 
+                $('#main').after(newDiv);
                 $(function() {
     $(".input").autocomplete({
         source : function(request, response) {
@@ -233,46 +228,43 @@ $(document).ready(function() {
             }
             
             else {      
-                $(container).append('<label>Reached the limit</label>'); 
-                $('#btAdd').attr('class', 'bt-disable'); 
-                $('#btAdd').attr('disabled', 'disabled');
+                $(newDiv).append('<label>Reached the limit</label>'); 
+                $('#addAddr').attr('class', 'bt-disable'); 
+                $('#addAddr').attr('disabled', 'disabled');
             }
             
   
         });
-
-       
-        $('#btRemove').click(function() {
+        // To remove single textbox
+        $('#removeAddr').click(function() {
             if (count != 0) { $('#tb' + count).remove(); count = count - 1; }
         
             if (count == 0) { 
-                $(container)
+                $(newDiv)
                     .empty() 
                     .remove(); 
-
-                $('#btAdd')
+                $('#addAddr')
                     .removeAttr('disabled') 
                     .attr('class', 'bt');
             }
         });
-
        
-        $('#btRemoveAll').click(function() {
-            $(container)
+        // To remove all textboxes
+        $('#removeAllAddr').click(function() {
+            $(newDiv)
                 .empty()
                 .remove(); 
-
             
             count = 0; 
             
-            $('#btAdd')
+            $('#addAddr')
                 .removeAttr('disabled') 
                 .attr('class', 'bt');
             clearmap();
         });
         
-        //$('#find-route').click(function(){
-          
+    
+   // callback function to send /recieve json object between client and server      
     $(document).on('click','#find-route',function(){
     getDurations(function(){
     var tempjs = [];
@@ -313,26 +305,32 @@ $(document).ready(function() {
          
            directionsDisplay.setMap(map);
            var request = {
-	    origin: locations[json[0]["path"][0]],
-	    destination: locations[json[0]["path"][len-1]],
+	   origin: locations[json[0]["path"][0]],
+	   destination: locations[json[0]["path"][len-1]],
             waypoints: waypoints,
-	    travelMode: 'DRIVING'
-	  };
-	  directionsService.route(request, function(result, status) {
-	    if (status == 'OK') {
+	   travelMode: 'DRIVING'
+	 };
+	 directionsService.route(request, function(result, status) {
+	   if (status == 'OK') {
               console.log("ok")
-	      directionsDisplay.setDirections(result);
-	    }
+	     directionsDisplay.setDirections(result);
+	   }
             else{
               console.log("error")
           }
-	  });
-           
+	 });
+          
           for(i=0;i<len;i++){
-           document.getElementById('footer').innerHTML +=' ' + labels[json[0]["path"][i]];
+		if(i===len-1){
+		document.getElementById('results').innerHTML +=labels[json[0]["path"][i]];
+		}
+		else{
+           document.getElementById('results').innerHTML +=labels[json[0]["path"][i]]+' ==>> ' ;
            }
-           document.getElementById('footer').innerHTML +=' ' + distsum/1000 + 'Km';
-           document.getElementById('footer').innerHTML +=' ' + json[1]["totaltime"]/3600 + 'hours';
+	   }
+	   document.getElementById('results').innerHTML +='<br>';
+           document.getElementById('results').innerHTML +='Distance:' + distsum/1000 + 'Km'+'<br>';
+           document.getElementById('results').innerHTML +='Duration:' + json[1]["totaltime"]/3600 + 'hours'+'<br>';
            alert(result);
             },
          failure: function(result){
@@ -345,13 +343,12 @@ $(document).ready(function() {
         google.maps.event.addDomListener(window, 'load',initAutocomplete);
     
 });
-
 </script>
     
 </head>
 <body>
     <div id="topbar" style='background-color:#3c8dc5;font-size:50px;font-family:Palatino;color:white; height:60px; padding:0 0 90px 0; width:100%; text-align:center'>Route Optimiser</div>
-    <div id="outer" style='background-color:#e6f9ff;margin: 0 0 0 0; height: 630px;width:50%;float:left'>
+    <div id="outer" style='background-color:#e6f9ff;height:630px;width:50%;float:left'>
 	<table style="background-color:#e6f9ff; margin-left: 60px;width: 25%">
                     <tr>
                         <td colspan="2"></td>
@@ -377,9 +374,9 @@ $(document).ready(function() {
                     </tr>
 </table>
     <div id="main" style="width:100%;background-color: #e6f9ff; margin:30px 60px;"> 
-        <input type="button" id="btAdd" value="Add" class="bt" />
-        <input type="button" id="btRemove" value="Delete" class="bt" />
-        <input type="button" id="btRemoveAll" value="Remove All" class="bt" />
+        <input type="button" id="addAddr" value="Add" class="bt" />
+        <input type="button" id="removeAddr" value="Delete" class="bt" />
+        <input type="button" id="removeAllAddr" value="Remove All" class="bt" />
         <input type="button" id="btSubmit" value="Submit" class="bt" onclick="getLocationsfromText();" /><br />
     </div>
     </div>     
@@ -387,12 +384,13 @@ $(document).ready(function() {
         <div id="map-canvas" style="width:860px; margin:  15px 60px 0 0 ; border: 1px solid grey; height:600px; background-color:#e6f9ff; #e6f9ff;float:right"></div>
         <!--div class="hr vpad"></div-->
     </div>
-    <div id='footer' style='float:left;background-color:#494952;height:350px;width:100%'>
-        <table style="background-color: #ff3366; margin-left: 60px;width: 25%">
+    <div id='footer' style='float:left;background-color:#494952;height:350px;width:100%;font-family:Ariel;font-size:30px;text-align:left;color:white'>
+        <table style="background-color: #494952; margin-left: 60px;width: 25%;margin:60px 30px 30px 30px ">
                     <tr id="buttons">
-                        <td colspan="2"><button id="find-route" style="width:100%;background-color: #ff9933">Calculate Best Route</button> <button id="clear-map" style="width:100%" onclick="clearmap();">Clear</button></td>
+                        <td colspan="2"><button id="find-route" style="width:100%" class="bt">Calculate Best Route</button> <button id="clear-map" style="width:100%" onclick="clearmap();" class="bt">Clear</button></td>
                     </tr>
-                </table>
+        </table>
+	<div id='results' style="float:right;width:1200px;margin-top:-190px;background-color:#494952;height:200px"></div>
     </div>
             
     
